@@ -1,15 +1,13 @@
 import os
 import asyncmy
 from utils.logger import ModuleLogger
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
 from fastapi import Depends
 from utils.config import ConfigUtil
+from models.db_models import Base, Customer, User
 
 logger = ModuleLogger(__name__).get_logger()
-Base = declarative_base()
-
 
 class MysqlClient:
     _instance = None
@@ -45,12 +43,20 @@ class MysqlClient:
         logger.info("Try to connect to database: %s", self.db_name)
         try:
             self.engine = create_engine(
-                f'mysql+asyncmy://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}')
+                f'mysql+asyncmy://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}'
+            )
             if self.engine:
                 logger.info("Created connection engine",
                             extra={"host": self.host, "port": self.port, "user": self.user, "db": self.db_name})
                 self.Session = sessionmaker(bind=self.engine)
                 logger.info("Created session maker...")
+                
+                inspector = inspect(self.engine)
+                existing_tables = inspector.get_table_names()
+                if not existing_tables:
+                    Base.metadata.create_all(bind=self.engine)
+                    logger.info("Created new tables")
+
             else:
                 logger.error("Error creating connection engine.")
         except Exception as e:
@@ -93,7 +99,6 @@ class MysqlClient:
             self.pool.close()
             logger.info("Waiting for connection pool to close...")
             await self.pool.wait_closed()
-
 
 def get_mysql_client():
     client = MysqlClient()
