@@ -3,6 +3,18 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
+class Token(Base):
+    __tablename__ = 'tokens'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    login=Column(String)
+    password=Column(String)
+    access_token = Column(String, unique=True, index=True)
+    refresh_token = Column(String)
+    token_type = Column(String)
+    expires_in = Column(Integer)
+    refresh_expires_in = Column(Integer)
+
 class Customer(Base):
     __tablename__ = "infinite_customers"
 
@@ -30,15 +42,3 @@ class Customer(Base):
     project_additional_data = Column(JSON)
     service_level = Column(String)
     welcome = Column(String)
-
-class User(Base):
-    __tablename__ = "infinite_users"
-    
-    id = Column(Integer, primary_key=True, index=True, autoincrement = True)
-    username = Column(String, index=True)
-    password = Column(String, index=True)
-    access_token = Column(String)
-    expires_in = Column(Integer)
-    refresh_expires_in = Column(Integer)
-    refresh_token = Column(String)
-    token_type = Column(String)

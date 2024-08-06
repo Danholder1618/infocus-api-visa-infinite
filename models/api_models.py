@@ -30,3 +30,7 @@ class Customer(BaseModel):
     project_additional_data: Optional[List[AdditionalData]] = None
     service_level: str
     welcome: Optional[str] = None
+
+class CustomerClose(BaseModel):
+    id: int
+    messageId: str = None
