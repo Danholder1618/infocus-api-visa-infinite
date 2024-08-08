@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, HTTPException
 from models.api_models import Customer, CustomerClose
 from typing import Optional, List
-from utils.config import settings
-from database.mysql import get_mysql_client
+from database.mysql import database
 from utils.utils import get_authorization_header
 import requests
+import os
+
+API_URL = os.getenv("API_URL")
 
 router = APIRouter(
     prefix="/api/customers",
@@ -13,9 +14,9 @@ router = APIRouter(
 )
 
 @router.post("/add", response_model=dict)
-async def add_customers(customers: List[Customer], db: Session = Depends(get_mysql_client().Session)):
-    url = f"{settings.API_URL}/api/user/add"
-    headers = get_authorization_header(db)
+async def add_customers(customers: List[Customer]):
+    url = f"{API_URL}/api/user/add"
+    headers = get_authorization_header(database)
     
     response = requests.post(url, json={"users": [customer.dict() for customer in customers]}, headers=headers)
     
@@ -25,9 +26,9 @@ async def add_customers(customers: List[Customer], db: Session = Depends(get_mys
     return response.json()
 
 @router.post("/close", response_model=dict)
-async def close_customers(customers: List[CustomerClose], db: Session = Depends(get_mysql_client().Session)):
+async def close_customers(customers: List[CustomerClose]):
     url = "https://api.infocus.company/api/user/close"
-    headers = get_authorization_header(db)
+    headers = get_authorization_header(database)
     
     response = requests.post(url, json={"users": [customer.dict() for customer in customers]}, headers=headers)
     
@@ -37,9 +38,9 @@ async def close_customers(customers: List[CustomerClose], db: Session = Depends(
     return response.json()
 
 @router.get("/list", response_model=dict)
-async def get_customers(from_record: Optional[str] = None, id: Optional[str] = None, limit: Optional[str] = None, phone: Optional[str] = None, db: Session = Depends(get_mysql_client().Session)):
+async def get_customers(from_record: Optional[str] = None, id: Optional[str] = None, limit: Optional[str] = None, phone: Optional[str] = None):
     url = "https://api.infocus.company/api/user/list"
-    headers = get_authorization_header(db)
+    headers = get_authorization_header(database)
     params = {"from": from_record, "id": id, "limit": limit, "phone": phone}
     
     response = requests.get(url, headers=headers, params=params)
@@ -50,9 +51,9 @@ async def get_customers(from_record: Optional[str] = None, id: Optional[str] = N
     return response.json()
 
 @router.post("/update", response_model=dict)
-async def update_customers(customers: List[Customer], db: Session = Depends(get_mysql_client().Session)):
+async def update_customers(customers: List[Customer]):
     url = "https://api.infocus.company/api/user/update"
-    headers = get_authorization_header(db)
+    headers = get_authorization_header(database)
     
     response = requests.post(url, json={"users": [customer.dict() for customer in customers]}, headers=headers)
     
