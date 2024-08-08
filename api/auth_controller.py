@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from models.db_models import Token
+from models.api_models import Token
 from utils.config import settings
 from utils.utils import get_token_from_db, save_token_to_db, update_token_in_db
-from database.mysql import get_mysql_client
+from database.mysql import database
 import requests
 
 router = APIRouter(
@@ -12,7 +12,8 @@ router = APIRouter(
 )
 
 @router.post("/getToken", response_model=Token)
-async def get_token(db: Session = Depends(get_mysql_client().Session)):
+async def get_token():
+    db = await database.get_pool()
     url = f"{settings.API_URL}/api/oauth/getToken"
     response = requests.post(url, json={"username": settings.LOGIN, "password": settings.PASSWORD})
 
@@ -30,12 +31,13 @@ async def get_token(db: Session = Depends(get_mysql_client().Session)):
         refresh_expires_in=token_data['refresh_expires_in'],
     )
     
-    save_token_to_db(db, token)
+    await save_token_to_db(db, token)
     return token
 
 @router.post("/updateToken", response_model=Token)
-async def update_token(db: Session = Depends(get_mysql_client().Session)):
-    token = get_token_from_db(db)
+async def update_token():
+    db = await database.get_pool()
+    token = await get_token_from_db(db)
 
     url = f"{settings.API_URL}/api/oauth/refreshToken"
     response = requests.post(url, json={"refresh_token": token.refresh_token})
@@ -44,13 +46,11 @@ async def update_token(db: Session = Depends(get_mysql_client().Session)):
         raise HTTPException(status_code=response.status_code, detail="Failed to update token")
 
     token_data = response.json()
-    token.login=settings.LOGIN
-    token.password=settings.PASSWORD
     token.access_token = token_data['access_token']
     token.refresh_token = token_data['refresh_token']
     token.token_type = token_data['token_type']
     token.expires_in = token_data['expires_in']
     token.refresh_expires_in = token_data['refresh_expires_in']
     
-    update_token_in_db(db, token)
+    await update_token_in_db(db, token)
     return token
