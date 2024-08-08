@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from models.api_models import Token
 from utils.utils import get_token_from_db, save_token_to_db, update_token_in_db
 from database.mysql import database
+from utils.logger import ModuleLogger
 import httpx
 import os
 
@@ -14,15 +15,24 @@ router = APIRouter(
     tags=["auth"],
 )
 
+logger = ModuleLogger("auth").get_logger()
+
 @router.post("/getToken", response_model=Token)
 async def get_token():
     db = await database.pool
     url = f"{API_URL}/api/oauth/getToken"
+    headers = {"Content-Type": "application/json"}
+    data = {"username": LOGIN, "password": PASSWORD}
+
     async with httpx.AsyncClient() as client:
-        response = await client.post(url, json={"username": LOGIN, "password": PASSWORD})
+        response = await client.post(url, json=data)
+        
+    logger.info(f"Request: URL: {url}, Headers: {headers},  Data: {data}")
 
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail="Failed to get token")
+
+    logger.info(f"Response: Status Code: {response.status_code}, Headers: {response.headers}, Body: {response.json()}")
 
     token_data = response.json()
     token = Token(
@@ -44,11 +54,18 @@ async def update_token():
     token = await get_token_from_db(db)
 
     url = f"{API_URL}/api/oauth/refreshToken"
+    headers = {"Content-Type": "application/json"}
+    data = {"refresh_token": token.refresh_token}
+
     async with httpx.AsyncClient() as client:
-        response = await client.post(url, json={"refresh_token": token.refresh_token})
+        response = await client.post(url, json=data)
+
+    logger.info(f"Request: URL: {url}, Headers: {headers},  Data: {data}")
 
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail="Failed to update token")
+    
+    logger.info(f"Response: Status Code: {response.status_code}, Headers: {response.headers}, Body: {response.json()}")
 
     token_data = response.json()
     token.access_token = token_data['access_token']
