@@ -5,3 +5,5 @@ SQLAlchemy==2.0.31
 asyncmy==0.2.9
 pydantic==2.8.2
 python-dotenv==1.0.1
+aiomysql==0.2.0
+sshtunnel==0.4.0

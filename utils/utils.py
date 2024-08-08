@@ -22,7 +22,6 @@ async def get_token_from_db(db):
     result = await db.fetch_one(query, as_dict=True)
     return Token(**result) if result else None
 
-
 def get_authorization_header(db: Session):
     token = get_token_from_db(db)
     return {"Authorization": f"Bearer {token.access_token}", "Content-Type": "application/json"}

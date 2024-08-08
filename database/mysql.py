@@ -16,10 +16,13 @@ class MySQLDatabase:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    async def __init__(self):
+    def __init__(self):
         if not hasattr(self, "initialized"):
-            await self.connect()
             self.initialized = True
+            self.pool = None
+            self.vidation_pool = None
+            self.ssh_tunnel = None
+            self.use_ssh = False
 
     async def connect(self):
         try:
@@ -123,6 +126,5 @@ class MySQLDatabase:
             async with conn.cursor(cursor_type) as cur:
                 await cur.execute(query, params)
                 return await cur.fetchall()
-
 
 database = MySQLDatabase()

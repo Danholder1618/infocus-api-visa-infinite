@@ -1,10 +1,13 @@
-from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, HTTPException
 from models.api_models import Token
-from utils.config import settings
 from utils.utils import get_token_from_db, save_token_to_db, update_token_in_db
 from database.mysql import database
 import requests
+import os
+
+API_URL = os.getenv("API_URL")
+LOGIN = os.getenv("LOGIN")
+PASSWORD = os.getenv("PASSWORD")
 
 router = APIRouter(
     prefix="/api/oauth",
@@ -14,16 +17,16 @@ router = APIRouter(
 @router.post("/getToken", response_model=Token)
 async def get_token():
     db = await database.get_pool()
-    url = f"{settings.API_URL}/api/oauth/getToken"
-    response = requests.post(url, json={"username": settings.LOGIN, "password": settings.PASSWORD})
+    url = f"{API_URL}/api/oauth/getToken"
+    response = requests.post(url, json={"username": LOGIN, "password": PASSWORD})
 
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail="Failed to get token")
 
     token_data = response.json()
     token = Token(
-        login=settings.LOGIN,
-        password=settings.PASSWORD,
+        login=LOGIN,
+        password=PASSWORD,
         access_token=token_data['access_token'],
         refresh_token=token_data['refresh_token'],
         token_type=token_data['token_type'],
@@ -39,7 +42,7 @@ async def update_token():
     db = await database.get_pool()
     token = await get_token_from_db(db)
 
-    url = f"{settings.API_URL}/api/oauth/refreshToken"
+    url = f"{API_URL}/api/oauth/refreshToken"
     response = requests.post(url, json={"refresh_token": token.refresh_token})
 
     if response.status_code != 200:
