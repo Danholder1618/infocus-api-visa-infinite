@@ -117,14 +117,12 @@ class MySQLDatabase:
                 return await cur.fetchall()
 
     async def fetch_one(self, query, params=None, as_dict=False, use_vidation_db=False):
-        return await self.execute_query(query, params, as_dict, use_vidation_db)
+        data = await self.execute_query(query, params, as_dict, use_vidation_db)
+        return data[0] if data else None
+
 
     async def fetch_all(self, query, params=None, as_dict=False, use_vidation_db=False):
-        cursor_type = aiomysql.DictCursor if as_dict else aiomysql.Cursor
-        pool = self.vidation_pool if use_vidation_db else self.pool
-        async with pool.acquire() as conn:
-            async with conn.cursor(cursor_type) as cur:
-                await cur.execute(query, params)
-                return await cur.fetchall()
+        data = await self.execute_query(query, params, as_dict, use_vidation_db)
+        return data
 
 database = MySQLDatabase()

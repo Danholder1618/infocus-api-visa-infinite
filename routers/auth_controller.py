@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from models.api_models import Token
 from utils.utils import get_token_from_db, save_token_to_db, update_token_in_db
 from database.mysql import database
-import requests
+import httpx
 import os
 
 API_URL = os.getenv("API_URL")
@@ -16,9 +16,10 @@ router = APIRouter(
 
 @router.post("/getToken", response_model=Token)
 async def get_token():
-    db = await database.get_pool()
+    db = await database.pool
     url = f"{API_URL}/api/oauth/getToken"
-    response = requests.post(url, json={"username": LOGIN, "password": PASSWORD})
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, json={"username": LOGIN, "password": PASSWORD})
 
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail="Failed to get token")
@@ -33,17 +34,18 @@ async def get_token():
         expires_in=token_data['expires_in'],
         refresh_expires_in=token_data['refresh_expires_in'],
     )
-    
+
     await save_token_to_db(db, token)
     return token
 
 @router.post("/updateToken", response_model=Token)
 async def update_token():
-    db = await database.get_pool()
+    db = await database.pool
     token = await get_token_from_db(db)
 
     url = f"{API_URL}/api/oauth/refreshToken"
-    response = requests.post(url, json={"refresh_token": token.refresh_token})
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, json={"refresh_token": token.refresh_token})
 
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail="Failed to update token")

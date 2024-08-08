@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api import auth_controller, customers_controller
 from database.mysql import database
+from utils.utils import create_table_if_not_exists
 
 app = FastAPI()
 
@@ -19,6 +20,7 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup():
     await database.connect()
+    await create_table_if_not_exists(database.pool)
 
 @app.on_event("shutdown")
 async def shutdown():
