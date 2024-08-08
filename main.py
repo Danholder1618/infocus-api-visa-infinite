@@ -1,11 +1,12 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from api import vsm
-from database.mysql import get_mysql_client
+from api import auth_controller, customers_controller
+from database.mysql import database
 
 app = FastAPI()
 
-app.include_router(vsm.router, prefix="/infocus")
+app.include_router(auth_controller.router)
+app.include_router(customers_controller.router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -17,13 +18,11 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup():
-    mysql_client = get_mysql_client()
-    await mysql_client.create_pool()
+    await database.connect()
 
 @app.on_event("shutdown")
 async def shutdown():
-    mysql_client = get_mysql_client()
-    await mysql_client.close()
+    await database.close()
 
 if __name__ == "__main__":
     import uvicorn
