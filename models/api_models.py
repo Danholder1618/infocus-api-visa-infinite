@@ -2,6 +2,15 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List
 
+class Token(BaseModel):
+    login: str
+    password: str
+    access_token: str
+    refresh_token: str
+    token_type: str
+    expires_in: str
+    refresh_expires_in: str
+
 class AdditionalData(BaseModel):
     project_name: str
     project_value: int
