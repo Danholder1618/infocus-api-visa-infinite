@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api import auth_controller, customers_controller
+from routers import auth_controller, customers_controller
 from database.mysql import database
 from utils.utils import create_table_if_not_exists
+import logging
 
 app = FastAPI()
 
@@ -19,12 +20,18 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup():
-    await database.connect()
-    await create_table_if_not_exists(database.pool)
+    try:
+        await database.connect()
+        await create_table_if_not_exists(database.pool)
+    except Exception as e:
+        logging.error(f"Error during startup: {e}")
 
 @app.on_event("shutdown")
 async def shutdown():
-    await database.close()
+    try:
+        await database.close()
+    except Exception as e:
+        logging.error(f"Error during shutdown: {e}")
 
 if __name__ == "__main__":
     import uvicorn

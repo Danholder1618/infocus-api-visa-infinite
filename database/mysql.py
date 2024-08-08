@@ -98,12 +98,18 @@ class MySQLDatabase:
             raise e
 
     async def close(self):
-        self.pool.close()
-        self.vidation_pool.close()
-        if self.use_ssh:
-            self.ssh_tunnel.stop()
-        await self.pool.wait_closed()
-        await self.vidation_pool.wait_closed()
+        try:
+            logging.info("Closing database connections...")
+            self.pool.close()
+            self.vidation_pool.close()
+            if self.use_ssh and self.ssh_tunnel:
+                self.ssh_tunnel.stop()
+            await self.pool.wait_closed()
+            await self.vidation_pool.wait_closed()
+            logging.info("Database connections closed")
+        except Exception as e:
+            logging.error(f"Error closing database connections: {e}")
+            raise e
 
     async def execute_query(self, query, params=None, as_dict=False, use_vidation_db=False):
         cursor_type = aiomysql.DictCursor if as_dict else aiomysql.Cursor
@@ -119,7 +125,6 @@ class MySQLDatabase:
     async def fetch_one(self, query, params=None, as_dict=False, use_vidation_db=False):
         data = await self.execute_query(query, params, as_dict, use_vidation_db)
         return data[0] if data else None
-
 
     async def fetch_all(self, query, params=None, as_dict=False, use_vidation_db=False):
         data = await self.execute_query(query, params, as_dict, use_vidation_db)

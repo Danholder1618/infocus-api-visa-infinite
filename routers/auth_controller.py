@@ -24,15 +24,15 @@ async def get_token():
     headers = {"Content-Type": "application/json"}
     data = {"username": LOGIN, "password": PASSWORD}
 
+    logger.info(f"Request: URL: {url}, Headers: {headers},  Data: {data}")
+
     async with httpx.AsyncClient() as client:
         response = await client.post(url, json=data)
         
-    logger.info(f"Request: URL: {url}, Headers: {headers},  Data: {data}")
+    logger.info(f"Response: Status Code: {response.status_code}, Headers: {response.headers}, Body: {response.json()}")
 
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail="Failed to get token")
-
-    logger.info(f"Response: Status Code: {response.status_code}, Headers: {response.headers}, Body: {response.json()}")
+        raise HTTPException(status_code=response.status_code, detail=f"Failed to get token: {response.json()}")
 
     token_data = response.json()
     token = Token(
@@ -56,17 +56,17 @@ async def update_token():
     url = f"{API_URL}/api/oauth/refreshToken"
     headers = {"Content-Type": "application/json"}
     data = {"refresh_token": token.refresh_token}
+    
+    logger.info(f"Request: URL: {url}, Headers: {headers},  Data: {data}")
 
     async with httpx.AsyncClient() as client:
         response = await client.post(url, json=data)
 
-    logger.info(f"Request: URL: {url}, Headers: {headers},  Data: {data}")
-
-    if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail="Failed to update token")
-    
     logger.info(f"Response: Status Code: {response.status_code}, Headers: {response.headers}, Body: {response.json()}")
 
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=f"Failed to update token {response.json()}")
+    
     token_data = response.json()
     token.access_token = token_data['access_token']
     token.refresh_token = token_data['refresh_token']

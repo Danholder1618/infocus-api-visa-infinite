@@ -30,7 +30,7 @@ async def add_customers(customers: List[Customer]):
     logger.info(f"Response from add customers: Status Code: {response.status_code}, Headers: {response.headers}, Body: {response.json()}")
     
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail="Failed to add customers")
+        raise HTTPException(status_code=response.status_code, detail=f"Failed to add customers: {response.json()}")
     
     return response.json()
 
@@ -48,7 +48,7 @@ async def close_customers(customers: List[CustomerClose]):
     logger.info(f"Response from close customers: Status Code: {response.status_code}, Headers: {response.headers}, Body: {response.json()}")
 
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail="Failed to close customers")
+        raise HTTPException(status_code=response.status_code, detail=f"Failed to close customers {response.json()}")
     
     return response.json()
 
@@ -66,7 +66,7 @@ async def get_customers(from_record: Optional[str] = None, id: Optional[str] = N
     logger.info(f"Response from get customers: Status Code: {response.status_code}, Headers: {response.headers}, Body: {response.json()}")
 
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail="Failed to get customer list")
+        raise HTTPException(status_code=response.status_code, detail=f"Failed to get customer list {response.json()}")
     
     return response.json()
 
@@ -84,6 +84,6 @@ async def update_customers(customers: List[Customer]):
     logger.info(f"Response from update customers: Status Code: {response.status_code}, Headers: {response.headers}, Body: {response.json()}")
 
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail="Failed to update customers")
+        raise HTTPException(status_code=response.status_code, detail=f"Failed to update customers {response.json()}")
     
     return response.json()
