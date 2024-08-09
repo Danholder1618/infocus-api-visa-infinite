@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from models.api_models import Customer, CustomerClose
 from typing import Optional, List
-from database.mysql import database
 from utils.utils import get_authorization_header
 from utils.logger import ModuleLogger
 import httpx
@@ -19,7 +18,7 @@ logger = ModuleLogger("customers").get_logger()
 @router.post("/add", response_model=dict)
 async def add_customers(customers: List[Customer]):
     url = f"{API_URL}/api/user/add"
-    headers = get_authorization_header(database)
+    headers = await get_authorization_header()
     data = {"users": [customer.dict() for customer in customers]}
 
     logger.info(f"Request to add customers: URL: {url}, Headers: {headers}, Data: {data}")
@@ -37,7 +36,7 @@ async def add_customers(customers: List[Customer]):
 @router.post("/close", response_model=dict)
 async def close_customers(customers: List[CustomerClose]):
     url = "https://api.infocus.company/api/user/close"
-    headers = get_authorization_header(database)
+    headers = await get_authorization_header()
     data = {"users": [customer.dict() for customer in customers]}
 
     logger.info(f"Request to close customers: URL: {url}, Headers: {headers}, Data: {data}")
@@ -55,7 +54,7 @@ async def close_customers(customers: List[CustomerClose]):
 @router.get("/list", response_model=dict)
 async def get_customers(from_record: Optional[str] = None, id: Optional[str] = None, limit: Optional[str] = None, phone: Optional[str] = None):
     url = "https://api.infocus.company/api/user/list"
-    headers = get_authorization_header(database)
+    headers = await get_authorization_header()
     params = {"from": from_record, "id": id, "limit": limit, "phone": phone}
 
     logger.info(f"Request to get customers: URL: {url}, Headers: {headers}, Params: {params}")
@@ -73,7 +72,7 @@ async def get_customers(from_record: Optional[str] = None, id: Optional[str] = N
 @router.post("/update", response_model=dict)
 async def update_customers(customers: List[Customer]):
     url = "https://api.infocus.company/api/user/update"
-    headers = get_authorization_header(database)
+    headers = await get_authorization_header()
     data = {"users": [customer.dict() for customer in customers]}
 
     logger.info(f"Request to update customers: URL: {url}, Headers: {headers}, Data: {data}")

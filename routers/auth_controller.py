@@ -19,7 +19,10 @@ logger = ModuleLogger("auth").get_logger()
 
 @router.post("/getToken", response_model=Token)
 async def get_token():
-    db = await database.pool
+    check = await get_token_from_db()
+    if check:
+        return check
+
     url = f"{API_URL}/api/oauth/getToken"
     headers = {"Content-Type": "application/json"}
     data = {"username": LOGIN, "password": PASSWORD}
@@ -45,13 +48,12 @@ async def get_token():
         refresh_expires_in=token_data['refresh_expires_in'],
     )
 
-    await save_token_to_db(db, token)
+    await save_token_to_db(token)
     return token
 
 @router.post("/updateToken", response_model=Token)
 async def update_token():
-    db = await database.pool
-    token = await get_token_from_db(db)
+    token = await get_token_from_db()
 
     url = f"{API_URL}/api/oauth/refreshToken"
     headers = {"Content-Type": "application/json"}
@@ -74,5 +76,5 @@ async def update_token():
     token.expires_in = token_data['expires_in']
     token.refresh_expires_in = token_data['refresh_expires_in']
     
-    await update_token_in_db(db, token)
+    await update_token_in_db(token)
     return token

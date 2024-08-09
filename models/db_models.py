@@ -42,3 +42,4 @@ class Customer(Base):
     project_additional_data = Column(JSON)
     service_level = Column(String)
     welcome = Column(String)
+    status_flag = Column(String, index=True)

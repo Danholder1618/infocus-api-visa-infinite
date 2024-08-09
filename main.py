@@ -2,8 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import auth_controller, customers_controller
 from database.mysql import database
-from utils.utils import create_table_if_not_exists
+from utils.utils import create_table_if_not_exists, load_customers_from_file, process_customers
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 import logging
+import asyncio
 
 app = FastAPI()
 
@@ -18,11 +21,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+scheduler = AsyncIOScheduler()
+
+async def update_tokens():
+    await auth_controller.update_token()
+
+async def load_data():
+    customers = await load_customers_from_file('./new_data.json')
+    await process_customers(customers)
+
+async def check_and_update_customers():
+    pass
+
 @app.on_event("startup")
 async def startup():
     try:
         await database.connect()
-        await create_table_if_not_exists(database.pool)
+        await create_table_if_not_exists()
+        await auth_controller.get_token()
+        scheduler.add_job(update_tokens, CronTrigger(day="*/25"))
+        scheduler.add_job(check_and_update_customers, CronTrigger(day="*/1"))
+        
+        scheduler.start()
     except Exception as e:
         logging.error(f"Error during startup: {e}")
 
