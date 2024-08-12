@@ -1,7 +1,9 @@
 from database.mysql import database
 from models.api_models import Customer
-from typing import List
+from models.db_models import Customer as CustomerDB
+from typing import List, Dict
 import json
+import httpx
 
 async def save_token_to_db(token):
     query = """
@@ -76,14 +78,13 @@ async def create_table_if_not_exists():
         phone VARCHAR(255) UNIQUE,
         project_additional_data JSON,
         service_level VARCHAR(255),
-        welcome VARCHAR(255),
-        status_flag VARCHAR(50) NOT NULL
+        welcome VARCHAR(255)
     );
     """
     await database.execute_query(query)
 
 async def load_customers_from_file(file_path: str) -> List[Customer]:
-    with open(file_path, 'new_data') as file:
+    with open(file_path, 'r', encoding='utf-8') as file:
         data = json.load(file)
     return [Customer(**item) for item in data]
 
@@ -91,52 +92,76 @@ async def get_customer_from_db(phone: str):
     query = "SELECT * FROM customers WHERE phone = %s"
     return await database.fetch_one(query, params=(phone,), as_dict=True)
 
+async def customer_to_dict(customer: Customer) -> Dict:
+    return {
+        "additional_phone": customer.additional_phone,
+        "bank_manager_fio": customer.bank_manager_fio,
+        "bank_manager_phone": customer.bank_manager_phone,
+        "bank_product": customer.bank_product,
+        "bin": customer.bin,
+        "card_type_id": customer.card_type_id,
+        "clid": customer.clid,
+        "date_birth": customer.date_birth.isoformat() if customer.date_birth else None,
+        "date_expiry": customer.date_expiry.isoformat() if customer.date_expiry else None,
+        "email": customer.email,
+        "firstname": customer.firstname,
+        "inn": customer.inn,
+        "language": customer.language,
+        "lastname": customer.lastname,
+        "manager": customer.manager,
+        "manual_subscribe": customer.manual_subscribe,
+        "message_id": customer.message_id,
+        "middlename": customer.middlename,
+        "pan": customer.pan,
+        "phone": customer.phone,
+        "project_additional_data": customer.project_additional_data,
+        "service_level": customer.service_level,
+        "welcome": customer.welcome
+    }
+
 async def process_customers(customers: List[Customer]):
     for customer in customers:
         existing_customer = await get_customer_from_db(customer.phone)
+        
         if existing_customer:
-            if customer != existing_customer:
-                customer.status_flag = 'updated'
+            if customer_to_dict(customer) != existing_customer:
+                data = {"users": customer_to_dict(customer)}
+                async with httpx.AsyncClient() as client:
+                    await client.post("https://localhost:6969/api/user/update", json=data)
                 await update_customer_in_db(customer)
-            else:
-                continue
         else:
-            customer.status_flag = 'new'
+            data = {"users": customer_to_dict(customer)}
+            async with httpx.AsyncClient() as client:
+                await client.post("https://localhost:6969/api/user/add", json=data)
             await save_customer_to_db(customer)
-    
-    await mark_customers_as_sent()
 
-async def save_customer_to_db(customer):
+async def save_customer_to_db(customer: CustomerDB):
     query = """
     INSERT INTO customers (additional_phone, bank_manager_fio, bank_manager_phone, bank_product, bin, card_type_id,
                            clid, date_birth, date_expiry, email, firstname, inn, language, lastname, manager,
                            manual_subscribe, message_id, middlename, pan, phone, project_additional_data, service_level,
-                           welcome, status_flag)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                           welcome)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     params = (customer.additional_phone, customer.bank_manager_fio, customer.bank_manager_phone, customer.bank_product,
               customer.bin, customer.card_type_id, customer.clid, customer.date_birth, customer.date_expiry, customer.email,
               customer.firstname, customer.inn, customer.language, customer.lastname, customer.manager, customer.manualSubscribe,
-              customer.massageId, customer.middlename, customer.pan, customer.phone, json.dumps(customer.project_additional_data),
-              customer.service_level, customer.welcome, customer.status_flag)
+              customer.messageId, customer.middlename, customer.pan, customer.phone, json.dumps(customer.project_additional_data),
+              customer.service_level, customer.welcome)
     await database.execute_query(query, params)
 
-async def update_customer_in_db(customer):
+async def update_customer_in_db(customer: CustomerDB):
     query = """
     UPDATE customers SET additional_phone = %s, bank_manager_fio = %s, bank_manager_phone = %s, bank_product = %s,
                          bin = %s, card_type_id = %s, clid = %s, date_birth = %s, date_expiry = %s, email = %s,
                          firstname = %s, inn = %s, language = %s, lastname = %s, manager = %s, manual_subscribe = %s,
                          message_id = %s, middlename = %s, pan = %s, phone = %s, project_additional_data = %s,
-                         service_level = %s, welcome = %s, status_flag = %s
+                         service_level = %s, welcome = %s
     WHERE phone = %s
     """
     params = (customer.additional_phone, customer.bank_manager_fio, customer.bank_manager_phone, customer.bank_product,
               customer.bin, customer.card_type_id, customer.clid, customer.date_birth, customer.date_expiry, customer.email,
               customer.firstname, customer.inn, customer.language, customer.lastname, customer.manager, customer.manualSubscribe,
-              customer.massageId, customer.middlename, customer.pan, customer.phone, json.dumps(customer.project_additional_data),
-              customer.service_level, customer.welcome, customer.status_flag, customer.phone)
+              customer.messageId, customer.middlename, customer.pan, customer.phone, json.dumps(customer.project_additional_data),
+              customer.service_level, customer.welcome, customer.phone)
     await database.execute_query(query, params)
-
-async def mark_customers_as_sent():
-    query = "UPDATE customers SET status_flag = 'sent' WHERE status_flag IN ('new', 'updated')"
-    await database.execute_query(query)

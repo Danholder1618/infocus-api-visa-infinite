@@ -27,11 +27,11 @@ async def update_tokens():
     await auth_controller.update_token()
 
 async def load_data():
-    customers = await load_customers_from_file('./new_data.json')
+    customers = await load_customers_from_file('./data/new_data.json')
     await process_customers(customers)
 
 async def check_and_update_customers():
-    pass
+    await load_data()
 
 @app.on_event("startup")
 async def startup():
@@ -40,6 +40,7 @@ async def startup():
         await create_table_if_not_exists()
         await auth_controller.get_token()
         scheduler.add_job(update_tokens, CronTrigger(day="*/25"))
+        await check_and_update_customers()
         scheduler.add_job(check_and_update_customers, CronTrigger(day="*/1"))
         
         scheduler.start()

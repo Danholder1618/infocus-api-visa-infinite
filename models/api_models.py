@@ -20,7 +20,7 @@ class Customer(BaseModel):
     bank_manager_fio: Optional[str]
     bank_manager_phone: Optional[str]
     bank_product: Optional[str]
-    bin: Optional[str]
+    bin: Optional[int]
     card_type_id: int
     clid: Optional[str]
     date_birth: datetime
@@ -32,7 +32,7 @@ class Customer(BaseModel):
     lastname: str
     manager: Optional[bool] = None
     manualSubscribe: Optional[bool] = None
-    massageId: Optional[str] = None
+    messageId: Optional[str] = None
     middlename: str
     pan: Optional[str] = None
     phone: str

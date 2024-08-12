@@ -23,7 +23,7 @@ class Customer(Base):
     bank_manager_fio = Column(String, index=True)
     bank_manager_phone = Column(String, unique=True, index=True)
     bank_product = Column(String)
-    bin = Column(String)
+    bin = Column(Integer)
     card_type_id = Column(Integer)
     clid = Column(String)
     date_birth = Column(DateTime)
@@ -42,4 +42,3 @@ class Customer(Base):
     project_additional_data = Column(JSON)
     service_level = Column(String)
     welcome = Column(String)
-    status_flag = Column(String, index=True)

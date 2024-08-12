@@ -19,10 +19,6 @@ logger = ModuleLogger("auth").get_logger()
 
 @router.post("/getToken", response_model=Token)
 async def get_token():
-    check = await get_token_from_db()
-    if check:
-        return check
-
     url = f"{API_URL}/api/oauth/getToken"
     headers = {"Content-Type": "application/json"}
     data = {"username": LOGIN, "password": PASSWORD}
@@ -47,6 +43,11 @@ async def get_token():
         expires_in=token_data['expires_in'],
         refresh_expires_in=token_data['refresh_expires_in'],
     )
+
+    check = await get_token_from_db()
+    if check:
+        await update_token_in_db(token)
+        return token
 
     await save_token_to_db(token)
     return token
