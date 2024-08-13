@@ -39,10 +39,11 @@ async def startup():
         await database.connect()
         await create_table_if_not_exists()
         await auth_controller.get_token()
-        scheduler.add_job(update_tokens, CronTrigger(day="*/25"))
+
         await check_and_update_customers()
+
+        scheduler.add_job(update_tokens, CronTrigger(day="*/25"))
         scheduler.add_job(check_and_update_customers, CronTrigger(day="*/1"))
-        
         scheduler.start()
     except Exception as e:
         logging.error(f"Error during startup: {e}")
@@ -52,7 +53,7 @@ async def shutdown():
     try:
         await database.close()
     except Exception as e:
-        logging.error(f"Error during shutdown: {e}")
+        logging.error(f"Error during shutdown: {e}") 
 
 if __name__ == "__main__":
     import uvicorn

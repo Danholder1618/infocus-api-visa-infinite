@@ -40,6 +40,11 @@ class Customer(BaseModel):
     service_level: str
     welcome: Optional[str] = None
 
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat(),
+        }
+
 class CustomerClose(BaseModel):
     id: int
     messageId: str = None

@@ -3,6 +3,7 @@ from models.api_models import Customer, CustomerClose
 from typing import Optional, List
 from utils.utils import get_authorization_header
 from utils.logger import ModuleLogger
+from fastapi.encoders import jsonable_encoder
 import httpx
 import os
 
@@ -19,7 +20,7 @@ logger = ModuleLogger("customers").get_logger()
 async def add_customers(customers: List[Customer]):
     url = f"{API_URL}/api/user/add"
     headers = await get_authorization_header()
-    data = {"users": [customer.dict() for customer in customers]}
+    data = {"users": [jsonable_encoder(customer) for customer in customers]}
 
     logger.info(f"Request to add customers: URL: {url}, Headers: {headers}, Data: {data}")
     
@@ -37,7 +38,7 @@ async def add_customers(customers: List[Customer]):
 async def close_customers(customers: List[CustomerClose]):
     url = "https://api.infocus.company/api/user/close"
     headers = await get_authorization_header()
-    data = {"users": [customer.dict() for customer in customers]}
+    data = {"users": [jsonable_encoder(customer) for customer in customers]}
 
     logger.info(f"Request to close customers: URL: {url}, Headers: {headers}, Data: {data}")
 
@@ -82,7 +83,7 @@ async def get_customers(from_record: Optional[str] = None, id: Optional[str] = N
 async def update_customers(customers: List[Customer]):
     url = "https://api.infocus.company/api/user/update"
     headers = await get_authorization_header()
-    data = {"users": [customer.dict() for customer in customers]}
+    data = {"users": [jsonable_encoder(customer) for customer in customers]}
 
     logger.info(f"Request to update customers: URL: {url}, Headers: {headers}, Data: {data}")
 

@@ -90,9 +90,10 @@ async def load_customers_from_file(file_path: str) -> List[Customer]:
 
 async def get_customer_from_db(phone: str):
     query = "SELECT * FROM customers WHERE phone = %s"
-    return await database.fetch_one(query, params=(phone,), as_dict=True)
+    result = await database.fetch_all(query, params=(phone,), as_dict=True)
+    return result
 
-async def customer_to_dict(customer: Customer) -> Dict:
+def customer_to_dict(customer: Customer) -> Dict:
     return {
         "additional_phone": customer.additional_phone,
         "bank_manager_fio": customer.bank_manager_fio,
@@ -102,15 +103,15 @@ async def customer_to_dict(customer: Customer) -> Dict:
         "card_type_id": customer.card_type_id,
         "clid": customer.clid,
         "date_birth": customer.date_birth.isoformat() if customer.date_birth else None,
-        "date_expiry": customer.date_expiry.isoformat() if customer.date_expiry else None,
+        "date_expiry": customer.date_expiry.isoformat() if customer.date_birth else None,
         "email": customer.email,
         "firstname": customer.firstname,
         "inn": customer.inn,
         "language": customer.language,
         "lastname": customer.lastname,
         "manager": customer.manager,
-        "manual_subscribe": customer.manual_subscribe,
-        "message_id": customer.message_id,
+        "manualSubscribe": customer.manualSubscribe,
+        "messageId": customer.messageId,
         "middlename": customer.middlename,
         "pan": customer.pan,
         "phone": customer.phone,
@@ -120,19 +121,15 @@ async def customer_to_dict(customer: Customer) -> Dict:
     }
 
 async def process_customers(customers: List[Customer]):
+    from routers import customers_controller
     for customer in customers:
         existing_customer = await get_customer_from_db(customer.phone)
-        
         if existing_customer:
             if customer_to_dict(customer) != existing_customer:
-                data = {"users": customer_to_dict(customer)}
-                async with httpx.AsyncClient() as client:
-                    await client.post("https://localhost:6969/api/user/update", json=data)
+                await customers_controller.update_customers([customer])
                 await update_customer_in_db(customer)
         else:
-            data = {"users": customer_to_dict(customer)}
-            async with httpx.AsyncClient() as client:
-                await client.post("https://localhost:6969/api/user/add", json=data)
+            await customers_controller.add_customers([customer])
             await save_customer_to_db(customer)
 
 async def save_customer_to_db(customer: CustomerDB):
